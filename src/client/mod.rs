@@ -310,10 +310,7 @@ impl From<&interfaces::MemoryRangeConfig> for MemoryRangeConfig {
 #[derive(Debug, Clone, Default)]
 pub struct RollupConfig {
     pub rx_buffer: Option<MemoryRangeConfig>,
-    pub tx_buffer: Option<MemoryRangeConfig>,
-    pub input_metadata: Option<MemoryRangeConfig>,
-    pub voucher_hashes: Option<MemoryRangeConfig>,
-    pub notice_hashes: Option<MemoryRangeConfig>,
+    pub tx_buffer: Option<MemoryRangeConfig>
 }
 
 impl RollupConfig {
@@ -325,19 +322,7 @@ impl RollupConfig {
 impl From<&interfaces::RollupConfig> for RollupConfig {
     fn from(config: &interfaces::RollupConfig) -> Self {
         RollupConfig {
-            input_metadata: match &config.input_metadata {
-                Some(config) => Some(MemoryRangeConfig::from(config)),
-                None => None,
-            },
-            notice_hashes: match &config.notice_hashes {
-                Some(config) => Some(MemoryRangeConfig::from(config)),
-                None => None,
-            },
             rx_buffer: match &config.rx_buffer {
-                Some(config) => Some(MemoryRangeConfig::from(config)),
-                None => None,
-            },
-            voucher_hashes: match &config.voucher_hashes {
                 Some(config) => Some(MemoryRangeConfig::from(config)),
                 None => None,
             },
@@ -490,6 +475,7 @@ pub enum AccessType {
 pub struct AccessLogType {
     pub proofs: bool,
     pub annotations: bool,
+    pub has_large_data: bool,
 }
 
 impl From<&interfaces::AccessLogType> for AccessLogType {
@@ -497,6 +483,7 @@ impl From<&interfaces::AccessLogType> for AccessLogType {
         AccessLogType {
             proofs: log_type.has_proofs,
             annotations: log_type.has_annotations,
+            has_large_data: log_type.has_large_data,
         }
     }
 }
@@ -590,6 +577,7 @@ pub struct AccessLog {
     pub brackets: Vec<BracketNote>,
     pub notes: Vec<String>,
     pub log_type: AccessLogType,
+    pub has_large_data: bool,
 }
 
 impl From<&interfaces::AccessLog> for AccessLog {
@@ -597,6 +585,7 @@ impl From<&interfaces::AccessLog> for AccessLog {
         let log_type = AccessLogType {
             proofs: log.log_type.has_proofs,
             annotations: log.log_type.has_annotations,
+            has_large_data: log.log_type.has_large_data,
         };
         AccessLog {
             log_type,
@@ -609,6 +598,7 @@ impl From<&interfaces::AccessLog> for AccessLog {
                 .map(|e| BracketNote::from(e))
                 .collect(),
             notes: log.notes.clone().unwrap_or_default(),
+            has_large_data: log.has_large_data,
         }
     }
 }
@@ -716,6 +706,7 @@ impl JsonRpcCartesiMachineClient {
         let log_type = interfaces::AccessLogType {
             has_proofs: log_type.proofs,
             has_annotations: log_type.annotations,
+            has_large_data: log_type.has_large_data
         };
         self.client
             .MachineStepUarch(log_type, one_based)
@@ -847,11 +838,6 @@ impl JsonRpcCartesiMachineClient {
         self.client.MachineVerifyDirtyPageMaps().await
     }
 
-    /// Dump all memory ranges to files in current working directory on the server (for debugging purporses)
-    pub async fn dump_pmas(&self) -> Result<bool, Error> {
-        self.client.MachineDumpPmas().await
-    }
-
     /// Returns copy of default system config from remote Cartesi machine server
     pub async fn get_default_config(&self) -> Result<MachineConfig, Error> {
         self.client
@@ -861,6 +847,21 @@ impl JsonRpcCartesiMachineClient {
     }
 
     /// Checks the internal consistency of an access log
+    pub async fn verify_uarch_access_log(
+        &self,
+        log: &AccessLog,
+        runtime: &MachineRuntimeConfig,
+        one_based: bool,
+    ) -> Result<bool, Error> {
+        let log = interfaces::AccessLog::from(log);
+        let runtime = interfaces::MachineRuntimeConfig::from(runtime);
+
+        self.client
+            .MachineVerifyUarchAccessLog(log, runtime, one_based)
+            .await
+    }
+
+    /// Checks the interal consistency of the log
     pub async fn verify_access_log(
         &self,
         log: &AccessLog,
@@ -897,7 +898,39 @@ impl JsonRpcCartesiMachineClient {
         let runtime = interfaces::MachineRuntimeConfig::from(runtime);
 
         self.client
-            .MachineVerifyStateTransition(
+            .MachineVerifyStepStateTransition(
+                root_hash_before,
+                log,
+                root_hash_after,
+                runtime,
+                one_based,
+            )
+            .await
+    }
+
+    /// Checks the validity of a state transition
+    pub async fn verify_uarch_state_transition(
+        &self,
+        root_hash_before: Vec<u8>,
+        log: &AccessLog,
+        root_hash_after: Vec<u8>,
+        one_based: bool,
+        runtime: &MachineRuntimeConfig,
+    ) -> Result<bool, Error> {
+        let mut root_hash_before = STANDARD.encode(&root_hash_before.clone());
+        let mut root_hash_after = STANDARD.encode(&root_hash_after.clone());
+
+        if root_hash_before.ends_with("=") {
+            root_hash_before.push('\n');
+        }
+        if root_hash_after.ends_with("=") {
+            root_hash_after.push('\n');
+        }
+        let log = interfaces::AccessLog::from(log);
+        let runtime = interfaces::MachineRuntimeConfig::from(runtime);
+
+        self.client
+            .MachineVerifyUarchStepStateTransition(
                 root_hash_before,
                 log,
                 root_hash_after,

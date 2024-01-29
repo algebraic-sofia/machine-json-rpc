@@ -18,8 +18,8 @@ use rstest::*;
 use std::future::Future;
 
 static INITIAL_ROOT_HASH: [u8; 32] = [
-    178, 185, 63, 105, 105, 131, 124, 22, 104, 140, 211, 71, 214, 178, 210, 140, 138, 150, 246, 15,
-    85, 65, 249, 68, 185, 118, 148, 246, 52, 45, 161, 249,
+    46, 106, 12, 143, 112, 13, 129, 233, 218, 166, 200, 38, 25, 24, 108, 173, 117, 160, 122, 151,
+    254, 31, 137, 244, 101, 104, 124, 32, 167, 86, 254, 80,
 ];
 
 static SECOND_STEP_HASH: [u8; 32] = [
@@ -198,26 +198,8 @@ mod local_server {
             tohost: Some(0),
         };
         default_config.rollup = RollupConfig {
-            input_metadata: Some(MemoryRangeConfig {
-                start: 0x60400000,
-                length: 4096,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
-            notice_hashes: Some(MemoryRangeConfig {
-                start: 0x60800000,
-                length: 2 << 20,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
             rx_buffer: Some(MemoryRangeConfig {
                 start: 0x60000000,
-                length: 2 << 20,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
-            voucher_hashes: Some(MemoryRangeConfig {
-                start: 0x60600000,
                 length: 2 << 20,
                 image_filename: "".to_string(),
                 shared: false,
@@ -293,26 +275,8 @@ mod local_server {
             tohost: Some(0),
         };
         default_config.rollup = RollupConfig {
-            input_metadata: Some(MemoryRangeConfig {
-                start: 0x60400000,
-                length: 4096,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
-            notice_hashes: Some(MemoryRangeConfig {
-                start: 0x60800000,
-                length: 2 << 20,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
             rx_buffer: Some(MemoryRangeConfig {
                 start: 0x60000000,
-                length: 2 << 20,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
-            voucher_hashes: Some(MemoryRangeConfig {
-                start: 0x60600000,
                 length: 2 << 20,
                 image_filename: "".to_string(),
                 shared: false,
@@ -425,7 +389,7 @@ mod local_server {
         let context = context_future.await;
         let default_config = context.get_server().get_default_config().await?;
         println!("Acquired default config {:?}", default_config);
-        assert_eq!(default_config.processor.pc, 4096);
+        assert_eq!(default_config.processor.pc, 0x80000000);
         assert_eq!(default_config.processor.mvendorid, 7161130726739634464);
         assert_eq!(default_config.processor.marchid, 0xf);
         assert_eq!(default_config.ram.length, 0);
@@ -460,26 +424,8 @@ mod local_server {
             tohost: Some(0),
         };
         default_config.rollup = RollupConfig {
-            input_metadata: Some(MemoryRangeConfig {
-                start: 0x60400000,
-                length: 4096,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
-            notice_hashes: Some(MemoryRangeConfig {
-                start: 0x60800000,
-                length: 2 << 20,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
             rx_buffer: Some(MemoryRangeConfig {
                 start: 0x60000000,
-                length: 2 << 20,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
-            voucher_hashes: Some(MemoryRangeConfig {
-                start: 0x60600000,
                 length: 2 << 20,
                 image_filename: "".to_string(),
                 shared: false,
@@ -535,26 +481,8 @@ mod local_server {
             tohost: Some(0),
         };
         default_config.rollup = RollupConfig {
-            input_metadata: Some(MemoryRangeConfig {
-                start: 0x60400000,
-                length: 4096,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
-            notice_hashes: Some(MemoryRangeConfig {
-                start: 0x60800000,
-                length: 2 << 20,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
             rx_buffer: Some(MemoryRangeConfig {
                 start: 0x60000000,
-                length: 2 << 20,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
-            voucher_hashes: Some(MemoryRangeConfig {
-                start: 0x60600000,
                 length: 2 << 20,
                 image_filename: "".to_string(),
                 shared: false,
@@ -650,6 +578,7 @@ mod local_server {
                 &AccessLogType {
                     annotations: true,
                     proofs: true,
+                    has_large_data: true,
                 },
                 false,
             )
@@ -752,6 +681,7 @@ mod local_server {
                 &AccessLogType {
                     annotations: true,
                     proofs: true,
+                    has_large_data: false,
                 },
                 false,
             )
@@ -776,8 +706,8 @@ mod local_server {
         assert_eq!(
             STANDARD.decode(target_hash_string).unwrap(),
             [
-                35, 254, 2, 79, 37, 221, 81, 35, 248, 37, 161, 169, 94, 207, 252, 232, 112, 88,
-                158, 205, 25, 69, 157, 16, 32, 131, 238, 33, 140, 15, 0, 174
+                244, 200, 161, 206, 95, 166, 107, 44, 83, 183, 150, 233, 96, 92, 76, 31, 194, 205,
+                209, 207, 237, 171, 123, 40, 82, 177, 89, 175, 49, 151, 243, 214
             ]
         );
         assert_eq!(proof.sibling_hashes.len(), 54);
@@ -897,14 +827,10 @@ mod local_server {
         let context = context_with_machine_future.await;
         let initial_config = context.get_server().get_initial_config().await?;
         println!("Acquired initial config {:?}", initial_config);
-        assert_eq!(initial_config.processor.pc, 4096);
+        assert_eq!(initial_config.processor.pc, 2147483648);
         assert_eq!(initial_config.processor.mvendorid, 7161130726739634464);
         assert_eq!(initial_config.processor.marchid, 0xf);
         assert_eq!(initial_config.ram.length, 1048576);
-        assert_eq!(
-            initial_config.rom.image_filename,
-            "/opt/cartesi/share/images/rom.bin"
-        );
         assert_eq!(initial_config.flash_drives.len(), 0);
         assert_eq!(initial_config.htif.fromhost, Some(0));
         assert_eq!(initial_config.htif.tohost, Some(0));
@@ -936,27 +862,6 @@ mod local_server {
 
     #[rstest]
     #[tokio::test]
-    async fn test_dump_pmas(
-        context_with_machine_future: impl Future<Output = Context>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let context = context_with_machine_future.await;
-        context.get_server().dump_pmas().await?;
-        std::thread::sleep(std::time::Duration::from_secs(3));
-        std::process::Command::new("rm")
-            .args(&[
-                "0000000000000000--0000000000001000.bin",
-                "0000000000001000--000000000000f000.bin",
-                "0000000002000000--00000000000c0000.bin",
-                "0000000040008000--0000000000001000.bin",
-                "0000000080000000--0000000000100000.bin",
-            ])
-            .status()
-            .expect("Failed to cleanup dump pmas test");
-        Ok(())
-    }
-
-    #[rstest]
-    #[tokio::test]
     async fn test_verify_access_log(
         context_with_machine_future: impl Future<Output = Context>,
     ) -> Result<(), Box<dyn std::error::Error>> {
@@ -967,13 +872,14 @@ mod local_server {
                 &AccessLogType {
                     annotations: true,
                     proofs: true,
+                    has_large_data: false,
                 },
                 false,
             )
             .await?;
         context
             .get_server()
-            .verify_access_log(&log, &MachineRuntimeConfig::default(), false)
+            .verify_uarch_access_log(&log, &MachineRuntimeConfig::default(), false)
             .await?;
         Ok(())
     }
@@ -991,6 +897,7 @@ mod local_server {
                 &AccessLogType {
                     annotations: true,
                     proofs: true,
+                    has_large_data: false,
                 },
                 false,
             )
@@ -998,14 +905,15 @@ mod local_server {
         let root_hash_after = context.get_server().get_root_hash().await?;
         context
             .get_server()
-            .verify_state_transition(
+            .verify_uarch_state_transition(
                 root_hash_before.to_vec(),
                 &log,
                 root_hash_after.to_vec(),
                 false,
                 &MachineRuntimeConfig::default(),
             )
-            .await?;
+            .await
+            .unwrap();
         Ok(())
     }
 
@@ -1053,26 +961,8 @@ mod local_server {
         };
 
         default_config.rollup = RollupConfig {
-            input_metadata: Some(MemoryRangeConfig {
-                start: 0x60400000,
-                length: 4096,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
-            notice_hashes: Some(MemoryRangeConfig {
-                start: 0x60800000,
-                length: 2 << 20,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
             rx_buffer: Some(MemoryRangeConfig {
                 start: 0x60000000,
-                length: 2 << 20,
-                image_filename: "".to_string(),
-                shared: false,
-            }),
-            voucher_hashes: Some(MemoryRangeConfig {
-                start: 0x60600000,
                 length: 2 << 20,
                 image_filename: "".to_string(),
                 shared: false,
@@ -1100,6 +990,7 @@ mod local_server {
                 &AccessLogType {
                     annotations: true,
                     proofs: true,
+                    has_large_data: false,
                 },
                 true,
             )

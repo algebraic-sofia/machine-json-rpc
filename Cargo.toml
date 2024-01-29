@@ -14,7 +14,9 @@ derive_builder = "0.12.0"
 jsonrpsee = {version = "0.18.2", features=["client-core", "jsonrpsee-http-client"]}
 serde = "1.0.188"
 serde_json = "1.0.105"
+tokio = "1.35.1"
 
 [dev-dependencies]
 rstest = "0.18.2"
 rand = "0.8.5"
+tokio = { version = "1.35.1", features = ["rt", "macros"] }

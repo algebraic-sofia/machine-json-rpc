@@ -84,6 +84,7 @@ impl From<&AccessLogType> for interfaces::AccessLogType {
         interfaces::AccessLogType {
             has_proofs: log_type.proofs,
             has_annotations: log_type.annotations,
+            has_large_data: log_type.has_large_data,
         }
     }
 }
@@ -93,6 +94,7 @@ impl From<&AccessLog> for interfaces::AccessLog {
         let log_type = interfaces::AccessLogType {
             has_proofs: log.log_type.proofs,
             has_annotations: log.log_type.annotations,
+            has_large_data: log.log_type.has_large_data,
         };
         interfaces::AccessLog {
             log_type,
@@ -108,6 +110,7 @@ impl From<&AccessLog> for interfaces::AccessLog {
                     .collect(),
             ),
             notes: Some(log.notes.clone()),
+            has_large_data: log.log_type.has_large_data,
         }
     }
 }
@@ -231,23 +234,11 @@ impl From<&MemoryRangeConfig> for interfaces::MemoryRangeConfig {
 impl From<&RollupConfig> for interfaces::RollupConfig {
     fn from(config: &RollupConfig) -> Self {
         interfaces::RollupConfig {
-            input_metadata: match &config.input_metadata {
-                Some(config) => Some(interfaces::MemoryRangeConfig::from(config)),
-                None => None,
-            },
             tx_buffer: match &config.tx_buffer {
                 Some(config) => Some(interfaces::MemoryRangeConfig::from(config)),
                 None => None,
             },
-            voucher_hashes: match &config.voucher_hashes {
-                Some(config) => Some(interfaces::MemoryRangeConfig::from(config)),
-                None => None,
-            },
             rx_buffer: match &config.rx_buffer {
-                Some(config) => Some(interfaces::MemoryRangeConfig::from(config)),
-                None => None,
-            },
-            notice_hashes: match &config.notice_hashes {
                 Some(config) => Some(interfaces::MemoryRangeConfig::from(config)),
                 None => None,
             },

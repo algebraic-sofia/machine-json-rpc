@@ -139,15 +139,9 @@ pub struct RAMConfig {
 #[serde(default)]
 pub struct RollupConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_metadata: Option<MemoryRangeConfig>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub notice_hashes: Option<MemoryRangeConfig>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub rx_buffer: Option<MemoryRangeConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tx_buffer: Option<MemoryRangeConfig>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub voucher_hashes: Option<MemoryRangeConfig>,
 }
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Builder, Default)]
 #[builder(setter(strip_option), default)]
@@ -252,6 +246,7 @@ pub type BracketArray = Vec<Bracket>;
 pub struct AccessLogType {
     pub has_annotations: BooleanVyG3AETh,
     pub has_proofs: BooleanVyG3AETh,
+    pub has_large_data: BooleanVyG3AETh,
 }
 pub type NoteArray = Vec<StringDoaGddGA>;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Builder, Default)]
@@ -300,6 +295,7 @@ pub struct AccessLog {
     pub log_type: AccessLogType,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<NoteArray>,
+    pub has_large_data: bool
 }
 pub type CSR = serde_json::Value;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default)]
@@ -440,20 +436,20 @@ where
         log_type: AccessLogType,
         one_based: BooleanVyG3AETh,
     ) -> Result<AccessLog, Error> {
-        let method = "machine.step_uarch";
+        let method = "machine.log_uarch_step";
         let mut params = ArrayParams::new();
         params.insert(log_type)?;
         params.insert(one_based)?;
         self.transport.request(method, params).await
     }
 
-    pub async fn MachineVerifyAccessLog<'a>(
+    pub async fn MachineVerifyUarchAccessLog<'a>(
         &'a self,
         log: AccessLog,
         runtime: MachineRuntimeConfig,
         one_based: BooleanVyG3AETh,
     ) -> Result<BooleanVyG3AETh, Error> {
-        let method = "machine.verify_access_log";
+        let method = "machine.verify_uarch_step_log";
         let mut params = ArrayParams::new();
         params.insert(log)?;
         params.insert(runtime)?;
@@ -461,7 +457,7 @@ where
         self.transport.request(method, params).await
     }
 
-    pub async fn MachineVerifyStateTransition<'a>(
+    pub async fn MachineVerifyUarchStepStateTransition<'a>(
         &'a self,
         root_hash_before: String,
         log: AccessLog,
@@ -469,7 +465,40 @@ where
         runtime: MachineRuntimeConfig,
         one_based: BooleanVyG3AETh,
     ) -> Result<BooleanVyG3AETh, Error> {
-        let method = "machine.verify_state_transition";
+        let method = "machine.verify_uarch_step_state_transition";
+        let mut params = ArrayParams::new();
+        params.insert(root_hash_before)?;
+        params.insert(log)?;
+        params.insert(root_hash_after)?;
+        params.insert(runtime)?;
+        params.insert(one_based)?;
+        self.transport.request(method, params).await
+    }
+
+
+    pub async fn MachineVerifyAccessLog<'a>(
+        &'a self,
+        log: AccessLog,
+        runtime: MachineRuntimeConfig,
+        one_based: BooleanVyG3AETh,
+    ) -> Result<BooleanVyG3AETh, Error> {
+        let method = "machine.verify_step_log";
+        let mut params = ArrayParams::new();
+        params.insert(log)?;
+        params.insert(runtime)?;
+        params.insert(one_based)?;
+        self.transport.request(method, params).await
+    }
+
+    pub async fn MachineVerifyStepStateTransition<'a>(
+        &'a self,
+        root_hash_before: String,
+        log: AccessLog,
+        root_hash_after: String,
+        runtime: MachineRuntimeConfig,
+        one_based: BooleanVyG3AETh,
+    ) -> Result<BooleanVyG3AETh, Error> {
+        let method = "machine.verify_step_state_transition";
         let mut params = ArrayParams::new();
         params.insert(root_hash_before)?;
         params.insert(log)?;
@@ -779,12 +808,6 @@ where
 
     pub async fn MachineVerifyDirtyPageMaps<'a>(&'a self) -> Result<BooleanVyG3AETh, Error> {
         let method = "machine.verify_dirty_page_maps";
-        let params = ArrayParams::new();
-        self.transport.request(method, params).await
-    }
-
-    pub async fn MachineDumpPmas<'a>(&'a self) -> Result<BooleanVyG3AETh, Error> {
-        let method = "machine.dump_pmas";
         let params = ArrayParams::new();
         self.transport.request(method, params).await
     }
